@@ -1,0 +1,10 @@
+1) Create the following files:
+
+beer.txt
+macros.txt
+
+CHMOD to 755.
+
+2) Edit config.js to change IRC nick, channels, etc.
+
+3) Type "`v commands" in IRC to get commands list
