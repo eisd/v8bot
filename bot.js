@@ -6,7 +6,7 @@ var sys = require('sys'),
 	//HTTP Client requires
 	http = require("http"),
 	events = require("events"),
-	url = require('url');
+	url = require('url'),
 	path = require('path'),
 	fs = require('fs');
 
@@ -24,7 +24,7 @@ function serialize(o) {
 		case 'number':
 		case 'boolean':
 		case 'function':
-			return o;
+			return o.toString();
 		case 'string':
 			return "\"" + o + "\"";
 		case 'undefined':
@@ -41,7 +41,7 @@ function serialize(o) {
 			}else {
 				s = '{';
 				for (var key in o) s += "\"" + key + "\": " + serialize(o[key]) + ', ';
-				s = s.replace(/\,\s*$/, '') + '}';
+				s = s.replace(/,\s*$/, '') + '}';
 			}
 			return s;
 		default:
