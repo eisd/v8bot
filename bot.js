@@ -145,7 +145,7 @@ function runCode(msg, client, nick, channel, private, format, echo) {
 function runCommand(c, msg, client, message, channel, nick, private) {
 	//`v commands
 	vCommands = {
-		"google":function(toNick, site, command) {
+		"google":function(toNick, site, command, append) {
 			var regex = new RegExp("(?:" + ["google", command || undefined].join("|") + ")\s*(.*)", "i");
 
 			var gQuery = regex.exec(msg);
@@ -156,7 +156,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			if (site) gQuery += "+" + "site%3A" + encodeURIComponent(site);
 
 			var google = http.createClient(80, 'ajax.googleapis.com');
-			var search_url = "/ajax/services/search/web?v=1.0&q=" + gQuery;
+			var search_url = "/ajax/services/search/web?v=1.0&q=" + gQuery + (append ? "%20" + encodeURIComponent(append) : "");
 			var request = google.request('GET', search_url, {
 				'host': 'ajax.googleapis.com',
 				'Referer': 'http://www.v8bot.com',
@@ -439,11 +439,15 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				}
 
 				if (c === "regex") vCommands["google"](toNick, "http://www.regular-expressions.info", c);
-				else if (c === "js") vCommands["google"](toNick, "https://developer.mozilla.org", c);
+				else if (c === "js" || c === "mdc") vCommands["google"](toNick, "https://developer.mozilla.org", c);
 				else if (c === "perl") vCommands["google"](toNick, "http://perldoc.perl.org", c);
 				else if (c === "jquery") vCommands["google"](toNick, "http://api.jquery.com", c);
 				else if (c === "php") vCommands["google"](toNick, "http://php.net", c);
 				else if (c === "java") vCommands["google"](toNick, "http://java.sun.com", c);
+				else if (c === "w3" || c === "w3c") vCommands["google"](toNick, "http://www.w3.org", c);
+				else if (c === "dom") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:javascript");
+				else if (c === "html") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:html");
+				else if (c === "css") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:css");
 			}
 		},
 		"help":function() {
