@@ -63,7 +63,7 @@ function iniSet(file, item, value, callback) {
 			__data = /([^=]+)=(.*)/.exec(_data[i]);
 			if (__data && __data.length >= 3) {
 				if (__data[1] === item) {
-					_data[i] = item.replace(/\\r|\\n|[\r\n]/g, "") + "=" + value;
+					_data[i] = item.replace(/[\\r\\n\r\n]/g, "") + "=" + value;
 					found = true;
 					break;
 				}
@@ -247,7 +247,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re string /regex/",
 				"`ref":["Uses Google search on authority websites to return a link for a specific topic. For example, the Javascript \
 					reference will provide only results from MDC.  The RegExp reference will only provide results from regular-expressions.info",
-					"Currently supported references: js, regex, perl",
+					"Currently supported references: js, jquery, regex, perl, php, java",
 					"Usage: `ref <language> <search>",
 					"Example: `ref js array *or* `ref regex pipe"]
 			};
@@ -383,27 +383,22 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 		},
 		//`re Regex Command
 		"`re":function() {
-			var parseRegex = (~msg.indexOf("@") ? /(.*)\s*@\s*(.*)/.exec(msg) : msg), toNick = nick;
+			var parseRegex = (~msg.indexOf("@") ? /(.*)\s+@\s+(\S+)$/.exec(msg) : msg), toNick = nick;
 			if (parseRegex instanceof Array && parseRegex.length > 1) {
 				toNick = parseRegex[2];
 				parseRegex = parseRegex[1];
 			}
 
-			var re = /^(.*)\s(?:m|(?=\/))([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
-			if (re && re.length >= 4) {
-				var s = re[1], r = re[3], f = re[4], out = [], m;
+			var mre = /^(.*)\s(?:m|(?=\/))([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
+			var sre = /^(.*)\ss([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
 
-				//s = s.replace(/^['"]|['"]$/g, ""); //Strip quotes
+			if (mre && mre.length >= 4) {
+				var s = mre[1], r = mre[3], f = mre[4], out = [], m;
 
 				if (~f.toLowerCase().indexOf("g")) {
 					var gRegex = RegExp(r, f);
 					out = serialize(s.match(gRegex) || "No matches found.");
-					/*if (gRegex.exec(s)) {
-						while (m = gRegex.exec(s)) out.push(m[1]);
-
-						out = serialize(out);
-					}else out = "No matches found.";*/
-				}else {
+				} else {
 					var regOut = RegExp(r, f).exec(s);
 					if (regOut) out = serialize(regOut);
 					else out = "No matches found.";
@@ -411,9 +406,17 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 
 				if (private) irc.sendPM(client, nick, out);
 				else irc.sendMessage(client, channel, out, toNick);
-			}else {
-				if (private) irc.sendPM(client, nick, "No matches found.");
-				else irc.sendMessage(client, channel, "No matches found.", toNick);
+			} else if (sre && sre.length >= 4) {
+				var s = sre[1], r = sre[3], u = sre[4], f = sre[5], out = [], m;
+
+				var gRegex = RegExp(r, f);
+				out = serialize(s.replace(gRegex,u));
+
+				if (private) irc.sendPM(client, nick, out);
+				else irc.sendMessage(client, channel, out, toNick);
+			} else {
+				if (private) irc.sendPM(client, nick, "Invalid syntax. Usage: `re string /regex/flags");
+				else irc.sendMessage(client, channel, "Invalid syntax. Usage: `re string /regex/flags", toNick);
 			}
 		},
 		//`ref Commands
@@ -438,6 +441,9 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				if (c === "regex") vCommands["google"](toNick, "http://www.regular-expressions.info", c);
 				else if (c === "js") vCommands["google"](toNick, "https://developer.mozilla.org", c);
 				else if (c === "perl") vCommands["google"](toNick, "http://perldoc.perl.org", c);
+				else if (c === "jquery") vCommands["google"](toNick, "http://api.jquery.com", c);
+				else if (c === "php") vCommands["google"](toNick, "http://php.net", c);
+				else if (c === "java") vCommands["google"](toNick, "http://java.sun.com", c);
 			}
 		},
 		"help":function() {
