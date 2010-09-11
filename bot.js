@@ -183,7 +183,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			cmdOut.sort();
 
 			return "Commands: Type `v <command>.  Optionally, type `v <command> @ <nick> to send to a specific user. \
-				`v Commands are: " + cmdOut.join(", ") + ". Other commands: v8, `re, `ref.  Type `v help <command> for more information.";
+				`v Commands are: " + cmdOut.join(", ") + ". Other commands: v8, `re, `pcre, `ref.  Type `v help <command> for more information.";
 		},
 		"about":function() {
 			return "v8bot is an IRC bot written entirely in Javascript using Google's v8 Javascript engine and Node.js.  Credits: eisd, Tim_Smart, gf3, MizardX";
@@ -244,10 +244,11 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					Type \"`v beers <nick>\" to get the number of beers for a specific user.",
 				"v8":"The \"v8\" command evaluates Javascript code using Google's ultra-fast V8 Javascript Engine.  Use \"v8: code\", \
 					\"v8> code\", or \"v8 code\"",
-				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re string /regex/",
+				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re string /regex/flags",
+				"`pcre":"The \"`pcre\" command evaluates regular expressions with the PCRE library. Usage: `pcre string /regex/flags",
 				"`ref":["Uses Google search on authority websites to return a link for a specific topic. For example, the Javascript \
 					reference will provide only results from MDC.  The RegExp reference will only provide results from regular-expressions.info",
-					"Currently supported references: js, jquery, regex, perl, php, java",
+					"Currently supported references: js, jquery, regex, perl, php, java, mdc, w3c, html, css, dom",
 					"Usage: `ref <language> <search>",
 					"Example: `ref js array *or* `ref regex pipe"]
 			};
@@ -417,6 +418,90 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			} else {
 				if (private) irc.sendPM(client, nick, "Invalid syntax. Usage: `re string /regex/flags");
 				else irc.sendMessage(client, channel, "Invalid syntax. Usage: `re string /regex/flags", toNick);
+			}
+		},
+		//`pcre Perl-Compatible Regular Expressions Command
+		"`pcre":function() {
+			var parseRegex = (~msg.indexOf("@") ? /(.*)\s+@\s+(\S+)$/.exec(msg) : msg), toNick = nick;
+			if (parseRegex instanceof Array && parseRegex.length > 1) {
+				toNick = parseRegex[2];
+				parseRegex = parseRegex[1];
+			}
+
+			var mre = /^(.*)\s(?:m|(?=\/))([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
+			var sre = /^(.*)\ss([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
+
+			//If input is valid, send data
+			if (mre && mre.length >= 4) {
+				var pcretest = require('child_process').spawn("pcretest"), out = "", timer;
+
+				//Listen for data
+				//var flag_re = false, flag_data = false;
+				function getData(s) {
+					s = s + "";
+
+					//Input regex pattern
+					/*if (~s.indexOf("re>") && !flag_re) {
+						pcretest.stdin.write('/' + mre[3] + '/' + mre[4]);
+						pcretest.stdin.write("\n");
+
+						flag_re = true;
+					}
+					//Input string
+					else if (~s.indexOf("data>") && !flag_data) {
+						pcretest.stdin.write(mre[1]);
+						pcretest.stdin.write("\n");
+
+						flag_data = true;
+					}
+					//Get output and exit
+					else */if (!!s) {
+						out += s.replace(/re>|data>/g, "");
+						pcretest.stdin.end();
+					}
+				}
+				pcretest.stdout.addListener("data", getData);
+
+				//Return output
+				pcretest.addListener("exit", function() {
+					clearTimeout(timer);
+
+					//Format output
+					if (out) {
+						//out = "[" + out.replace(/^\s+|\s+$/g, "").replace(/\n/g, ", ").replace(/\s+/g, " ").replace(/(\d+):\x20+/g, "($1): ") + "]";
+						out = out.split(/\n/g).filter(function(x){ return !!/\d+:\x20+\S/.test(x) }).map(function(x){ return x.replace(/^\s+|\s+$/g, "").replace(/\d+:\x20+/g, "") });
+
+						if (!out.length) out = "No matches found.";
+						else out = serialize(out);
+
+						if (private) irc.sendPM(client, nick, out);
+						else irc.sendMessage(client, channel, out, toNick);
+					}
+				});
+
+				/***This is NOT a test.  Do NOT remove the below lines. Dummy data needs to be sent to pcretest for Node to do I/O correctly***/
+				pcretest.stdin.write("/(?:)/\n");
+				pcretest.stdin.write("x\n");
+				pcretest.stdin.write("\n");
+				pcretest.stdin.write("\n");
+				/***The above lines are NOT a test. Do NOT remove the above lines.**********************/
+
+				//Input regex pattern and string
+				pcretest.stdin.write('/' + mre[3] + '/' + mre[4]);
+				pcretest.stdin.write("\n");
+				pcretest.stdin.write(mre[1]);
+				pcretest.stdin.write("\n");
+
+				timer = setTimeout(function() {
+					pcretest.stdout.removeListener("data", getData);
+					pcretest.kill();
+
+					if (private) irc.sendPM(client, nick, "Error: Timeout.");
+					else irc.sendMessage(client, channel, "Error: Timeout.", toNick);
+				}, 10000);
+			}else {
+				if (private) irc.sendPM(client, nick, "Invalid syntax. Usage: `pcre string /regex/flags");
+				else irc.sendMessage(client, channel, "Invalid syntax. Usage: `pcre string /regex/flags", toNick);
 			}
 		},
 		//`ref Commands
