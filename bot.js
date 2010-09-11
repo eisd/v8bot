@@ -170,11 +170,19 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					var searchResults = JSON.parse(body);
 					var results = searchResults["responseData"]["results"];
 
-					if (private) irc.sendPM(client, nick, results[0]["titleNoFormatting"] + " - " + results[0]["url"]);
-					else irc.sendMessage(client, channel, results[0]["titleNoFormatting"] + " - " + results[0]["url"], toNick);
+					if (private) irc.sendPM(client, nick, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){ return String.fromCharCode(b) }) + " - " + results[0]["url"]);
+					else irc.sendMessage(client, channel, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){ return String.fromCharCode(b) }) + " - " + results[0]["url"], toNick);
 				});
 			});
 			request.end();
+		},
+		//Return first GitHub result
+		"git":function(toNick) {
+			vCommands["google"](toNick, "http://github.com", "git");
+		},
+		//Return first StackOverflow result
+		"sf":function(toNick) {
+			vCommands["google"](toNick, "http://stackoverflow.com", "sf");
 		},
 		"commands":function() {
 			var cmdOut = [];
@@ -242,6 +250,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					Example: \"`v macro foo 1 bar\" - <arg 1> will be a number, <arg 2> will be a string literal \"bar\""],
 				"beers":"Type nick++ to give a beer to a user (usually as a way to say \"thanks\").  Type nick-- to take a beer away from a user. \
 					Type \"`v beers <nick>\" to get the number of beers for a specific user.",
+				"git":"Searches GitHub and returns the first result. Usage: `v git <search>. Optionally: `v git <search> @ <nick>",
+				"sf":"Searches Stack Overflow and returns the first result. Usage: `v sf <search>. Optionally: `v sf <search> @ <nick>",
 				"v8":"The \"v8\" command evaluates Javascript code using Google's ultra-fast V8 Javascript Engine.  Use \"v8: code\", \
 					\"v8> code\", or \"v8 code\"",
 				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re string /regex/flags",
@@ -250,7 +260,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					reference will provide only results from MDC.  The RegExp reference will only provide results from regular-expressions.info",
 					"Currently supported references: js, jquery, regex, perl, php, java, mdc, w3c, html, css, dom",
 					"Usage: `ref <language> <search>",
-					"Example: `ref js array *or* `ref regex pipe"]
+					"Example: `ref js array *or* `ref regex groups"]
 			};
 
 			if (p && p.length > 1) ~msg.indexOf("@") ? p = /(.*)\s*@/.exec(p[1])[1].replace(/^\s*|\s*$/g, "") : p = p[1];
@@ -261,14 +271,14 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			if (man[p]) {
 				if (man[p] instanceof Array) {
 					//Send first chunk immediately
-					if (private) irc.sendPM(client, nick, p + " Command: " + man[p][0]);
-					else irc.sendMessage(client, channel, p + " Command: " + man[p][0], toNick);
+					if (private) irc.sendPM(client, nick, p + " Command: " + man[p][0].replace(/^\s+/, ""));
+					else irc.sendMessage(client, channel, p + " Command: " + man[p][0].replace(/^\s+/, ""), toNick);
 
 					//Send chunked message
 					var t = setInterval(function() {
 						if (count++ < Math.min(5, man[p].length - 1)) {
-							if (private) irc.sendPM(client, nick, man[p][count]);
-							else irc.sendMessage(client, channel, man[p][count], toNick);
+							if (private) irc.sendPM(client, nick, man[p][count].replace(/^\s+/, ""));
+							else irc.sendMessage(client, channel, man[p][count].replace(/^\s+/, ""), toNick);
 						}else {
 							if (man[p].length > 5) {
 								if (private) irc.sendPM(client, nick, "[Output truncated...]");
@@ -278,12 +288,17 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 						}
 					}, 5000), count = 0;
 				}else {
-					if (private) irc.sendPM(client, nick, p + " Command: " + man[p]);
-					else irc.sendMessage(client, channel, p + " Command: " + man[p], toNick);
+					if (private) irc.sendPM(client, nick, p + " Command: " + man[p].replace(/^\s+/, ""));
+					else irc.sendMessage(client, channel, p + " Command: " + man[p].replace(/^\s+/, ""), toNick);
 				}
 			}else {
-				if (private) irc.sendPM(client, nick, "No manual page for this command.");
-				else irc.sendMessage(client, channel, "No manual page for this command.", toNick);
+				if (p === "") {
+					if (private) irc.sendPM(client, nick, "For a list of commands, type \"`v commands\".  For help on a specific command, type \"`v help <command>\".");
+					else irc.sendMessage(client, channel, "For a list of commands, type \"`v commands\".  For help on a specific command, type \"`v help <command>\".", toNick);
+				}else {
+					if (private) irc.sendPM(client, nick, "No manual page for this command.");
+					else irc.sendMessage(client, channel, "No manual page for this command.", toNick);
+				}
 			}
 		}
 	};
@@ -322,7 +337,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				var toNick = subcommand[2] ? ( (__ = /[^@]*@\s*(.*)/.exec(subcommand[2])) && __.length > 1 ? __[1] : nick ) : nick;
 
 				return vCommands[_] ? (function() { //`v command exists, execute it
-					if (~["google", "beers", "macro", "help", "regex"].indexOf(_)) vCommands[_](toNick);
+					if (~["google", "beers", "macro", "help", "regex", "git", "sf"].indexOf(_)) vCommands[_](toNick);
 					else {
 						if (private) irc.sendPM(client, nick, vCommands[_]());
 						else irc.sendMessage(client, channel, vCommands[_](), toNick);
@@ -429,7 +444,6 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			}
 
 			var mre = /^(.*)\s(?:m|(?=\/))([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
-			var sre = /^(.*)\ss([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
 
 			//If input is valid, send data
 			if (mre && mre.length >= 4) {
