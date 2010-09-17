@@ -254,8 +254,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				"sf":"Searches Stack Overflow and returns the first result. Usage: `v sf <search>. Optionally: `v sf <search> @ <nick>",
 				"v8":"The \"v8\" command evaluates Javascript code using Google's ultra-fast V8 Javascript Engine.  Use \"v8: code\", \
 					\"v8> code\", or \"v8 code\"",
-				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re string /regex/flags",
-				"`pcre":"The \"`pcre\" command evaluates regular expressions with the PCRE library. Usage: `pcre string /regex/flags",
+				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re text /regex/flags",
+				"`pcre":"The \"`pcre\" command evaluates regular expressions with the PCRE library. Usage: `pcre text /regex/flags",
 				"`ref":["Uses Google search on authority websites to return a link for a specific topic. For example, the Javascript \
 					reference will provide only results from MDC.  The RegExp reference will only provide results from regular-expressions.info",
 					"Currently supported references: js, jquery, regex, perl, php, java, mdc, w3c, html, css, dom",
@@ -326,7 +326,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 
 			irc.sendMessage(client, channel, send, nick);*/
 
-			runCode(msg, client, nick, channel, private);
+			runCode(msg, client, nick, channel, private, true);
 		},
 		//`v Commands
 		"`v":function() {
@@ -413,7 +413,11 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 
 				if (~f.toLowerCase().indexOf("g")) {
 					var gRegex = RegExp(r, f);
+
 					out = serialize(s.match(gRegex) || "No matches found.");
+					//while ((m = gRegex.exec(s)) != null) out.push(m[0]);
+
+					out = serialize(out);
 				} else {
 					var regOut = RegExp(r, f).exec(s);
 					if (regOut) out = serialize(regOut);
@@ -431,8 +435,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				if (private) irc.sendPM(client, nick, out);
 				else irc.sendMessage(client, channel, out, toNick);
 			} else {
-				if (private) irc.sendPM(client, nick, "Invalid syntax. Usage: `re string /regex/flags");
-				else irc.sendMessage(client, channel, "Invalid syntax. Usage: `re string /regex/flags", toNick);
+				if (private) irc.sendPM(client, nick, "Invalid syntax. Usage: `re text /regex/flags");
+				else irc.sendMessage(client, channel, "Invalid syntax. Usage: `re text /regex/flags", toNick);
 			}
 		},
 		//`pcre Perl-Compatible Regular Expressions Command
@@ -447,7 +451,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 
 			//If input is valid, send data
 			if (mre && mre.length >= 4) {
-				var pcretest = require('child_process').spawn("pcretest"), out = "", timer;
+				var pcretest = require('child_process').spawn("pcretest"), out = "", timer, error = "";
 
 				//Listen for data
 				//var flag_re = false, flag_data = false;
@@ -471,6 +475,9 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					//Get output and exit
 					else */if (!!s) {
 						out += s.replace(/re>|data>/g, "");
+
+						if (~s.toLowerCase().indexOf("failed") && !~s.indexOf("data>")) error = /failed:.*/i.exec(s).pop();
+
 						pcretest.stdin.end();
 					}
 				}
@@ -483,10 +490,11 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					//Format output
 					if (out) {
 						//out = "[" + out.replace(/^\s+|\s+$/g, "").replace(/\n/g, ", ").replace(/\s+/g, " ").replace(/(\d+):\x20+/g, "($1): ") + "]";
-						out = out.split(/\n/g).filter(function(x){ return !!/\d+:\x20+\S/.test(x) }).map(function(x){ return x.replace(/^\s+|\s+$/g, "").replace(/\d+:\x20+/g, "") });
+						out = out.split(/\n/g).filter(function(x){ return !!/\d+:\x20+/.test(x) }).map(function(x){ return x.replace(/^\s+|\s+$/g, "").replace(/^\d+:\x20*/, "") });
 
-						if (!out.length) out = "No matches found.";
-						else out = serialize(out);
+						if (error) out = error;
+						else if (out.length === 1) out = "No matches found.";
+						else out = serialize((out.shift(), out));
 
 						if (private) irc.sendPM(client, nick, out);
 						else irc.sendMessage(client, channel, out, toNick);
@@ -514,8 +522,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					else irc.sendMessage(client, channel, "Error: Timeout.", toNick);
 				}, 10000);
 			}else {
-				if (private) irc.sendPM(client, nick, "Invalid syntax. Usage: `pcre string /regex/flags");
-				else irc.sendMessage(client, channel, "Invalid syntax. Usage: `pcre string /regex/flags", toNick);
+				if (private) irc.sendPM(client, nick, "Invalid syntax. Usage: `pcre text /regex/flags");
+				else irc.sendMessage(client, channel, "Invalid syntax. Usage: `pcre text /regex/flags", toNick);
 			}
 		},
 		//`ref Commands
@@ -623,6 +631,8 @@ api.addListener("pm", function(client, message, nick) {
 });
 
 api.addListener("message", function(client, message, channel, nick) {
+	if (/(v8bot)\s*[:>]/.exec(message)) irc.sendMessage(client, channel, "Use v8: <code> to evaluate code or \"`v commands\" for a list of v8bot commands.", nick);
+
 	//Split message
 	var c = /([^\x20:>]*)(?:[:>]?\x20*)(.*)/.exec(message), msg;
 
@@ -670,7 +680,7 @@ api.addListener("message", function(client, message, channel, nick) {
 					});
 				});
 			}else {
-				irc.sendMessage(client, channel, r[1] + " is getting too many beers.  Don't let " + r[1] + " get drunk!");
+				!~blacklistChannels.indexOf(channel) && irc.sendMessage(client, channel, r[1] + " is getting too many beers.  Don't let " + r[1] + " get drunk!");
 			}
 
 			return false;
