@@ -49,6 +49,9 @@ function serialize(o) {
 	}
 }
 
+//Trim multi-line strings with \ hack
+function trim_ml(s) { return s.replace(/^\s+/m, "") }
+
 /*******************************INI FUNCTIONS*******************************/
 function iniSet(file, item, value, callback) {
 	fs.readFile(file, function(err, data) {
@@ -108,7 +111,7 @@ function runCode(msg, client, nick, channel, private, format, echo) {
 	(new Sandbox()).run(msg, function(out) {
 		//Filter long strings
 		if (out.length > 400) out = out.substring(0,400) + " [Output truncated...]";
-		var outSplit = out.split(/\r?\n/g);
+		var outSplit = out.split(/[\r\n]/g);
 		if (outSplit.length > 5) for (var i=0, out = "";i<5;i++) out += outSplit[i] + "\n";
 
 		if (outSplit.length > 1) {
@@ -169,6 +172,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				response.addListener('end', function() {
 					var searchResults = JSON.parse(body);
 					var results = searchResults["responseData"]["results"];
+
+					results[0]["url"] = decodeURIComponent(results[0]["url"]);
 
 					if (private) irc.sendPM(client, nick, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){ return String.fromCharCode(b) }) + " - " + results[0]["url"]);
 					else irc.sendMessage(client, channel, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){ return String.fromCharCode(b) }) + " - " + results[0]["url"], toNick);
@@ -271,14 +276,14 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			if (man[p]) {
 				if (man[p] instanceof Array) {
 					//Send first chunk immediately
-					if (private) irc.sendPM(client, nick, p + " Command: " + man[p][0].replace(/^\s+/, ""));
-					else irc.sendMessage(client, channel, p + " Command: " + man[p][0].replace(/^\s+/, ""), toNick);
+					if (private) irc.sendPM(client, nick, p + " Command: " + trim_ml(man[p][0]));
+					else irc.sendMessage(client, channel, p + " Command: " + trim_ml(man[p][0]), toNick);
 
 					//Send chunked message
 					var t = setInterval(function() {
 						if (count++ < Math.min(5, man[p].length - 1)) {
-							if (private) irc.sendPM(client, nick, man[p][count].replace(/^\s+/, ""));
-							else irc.sendMessage(client, channel, man[p][count].replace(/^\s+/, ""), toNick);
+							if (private) irc.sendPM(client, nick, trim_ml(man[p][count]));
+							else irc.sendMessage(client, channel, trim_ml(man[p][count]), toNick);
 						}else {
 							if (man[p].length > 5) {
 								if (private) irc.sendPM(client, nick, "[Output truncated...]");
@@ -559,9 +564,9 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 		},
 		"help":function() {
 			//Private message only
-			if (private) irc.sendPM(client, nick, "Type \"`v commands\" for a list of v8bot commands. \
+			if (private) irc.sendPM(client, nick, trim_ml("Type \"`v commands\" for a list of v8bot commands. \
 						Type \"`v help <command>\" for specific command help topics. \
-						Join #v8bot for more support.");
+						Join #v8bot for more support."));
 		}
 	};
 
@@ -675,8 +680,8 @@ api.addListener("message", function(client, message, channel, nick) {
 					iniSet("beer.txt", r[1], s, function() {
 						rateLimit.beers[r[1]] = +new Date;
 						!~blacklistChannels.indexOf(channel) && irc.sendMessage(client, channel, 
-							nick + " has " + action + " a beer " + action2 + " " + r[1] + ". \
-							" + r[1] + " now has " + s + " beers.");
+							trim_ml(nick + " has " + action + " a beer " + action2 + " " + r[1] + ". \
+							" + r[1] + " now has " + s + " beers."));
 					});
 				});
 			}else {
@@ -687,7 +692,8 @@ api.addListener("message", function(client, message, channel, nick) {
 		}
 
 		if (~["#v8bot", "##javascript", "#regex", "#buubot", "#Node.js", "#facebook"].indexOf(channel)) {
-			runCommand(c, msg, client, message, channel, nick, false);
+			if (c === "v8" && /v8\x20+.*/.exec(message) && /^[A-Za-z-]+\x20+[A-Za-z-]+/.exec(msg)) return false;
+			else runCommand(c, msg, client, message, channel, nick, false);
 		}
 	}
 });
