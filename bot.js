@@ -195,8 +195,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 
 			cmdOut.sort();
 
-			return "Commands: Type `v <command>.  Optionally, type `v <command> @ <nick> to send to a specific user. \
-				`v Commands are: " + cmdOut.join(", ") + ". Other commands: v8, `re, `pcre, `ref.  Type `v help <command> for more information.";
+			return trim_ml("Commands: Type `v <command>.  Optionally, type `v <command> @ <nick> to send to a specific user. \
+				`v Commands are: " + cmdOut.join(", ") + ". Other commands: v8, `re, `pcre, `ref.  Type `v help <command> for more information.");
 		},
 		"about":function() {
 			return "v8bot is an IRC bot written entirely in Javascript using Google's v8 Javascript engine and Node.js.  Credits: eisd, Tim_Smart, gf3, MizardX";
@@ -692,7 +692,19 @@ api.addListener("message", function(client, message, channel, nick) {
 		}
 
 		if (~["#v8bot", "##javascript", "#regex", "#buubot", "#Node.js", "#facebook"].indexOf(channel)) {
-			if (c === "v8" && /v8\x20+.*/.exec(message) && /^[A-Za-z-]+\x20+[A-Za-z-]+/.exec(msg)) return false;
+			if (c === "v8" && /v8\x20+.*/.exec(message)) {
+				/*var reserved = ["break", "do", "instanceof", "typeof", "case", 
+					"else", "new", "var", "catch", "finally", "return", 
+					"void", "continue", "for", "switch", "while", "debugger", 
+					"function", "this", "with", "default", "if", "throw", "delete", "in", "try"];
+
+				var nl = /^([A-Za-z-]+)\x20+([A-Za-z-]+)/.exec(msg);
+				if (nl && nl.every(function(x){ return !~reserved.indexOf(x) })) return false;
+
+				runCommand(c, msg, client, message, channel, nick, false);*/
+
+				irc.sendMessage(client, channel, "v8 <code> is no longer supported.  Try v8: <code> or v8> <code>");
+			}
 			else runCommand(c, msg, client, message, channel, nick, false);
 		}
 	}
