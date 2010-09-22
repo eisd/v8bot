@@ -257,8 +257,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					Type \"`v beers <nick>\" to get the number of beers for a specific user.",
 				"git":"Searches GitHub and returns the first result. Usage: `v git <search>. Optionally: `v git <search> @ <nick>",
 				"sf":"Searches Stack Overflow and returns the first result. Usage: `v sf <search>. Optionally: `v sf <search> @ <nick>",
-				"v8":"The \"v8\" command evaluates Javascript code using Google's ultra-fast V8 Javascript Engine.  Use \"v8: code\", \
-					\"v8> code\", or \"v8 code\"",
+				"v8":"The \"v8\" command evaluates Javascript code using Google's ultra-fast V8 Javascript Engine.  Use \"v8: code\" or \
+					\"v8> code\"",
 				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re text /regex/flags",
 				"`pcre":"The \"`pcre\" command evaluates regular expressions with the PCRE library. Usage: `pcre text /regex/flags",
 				"`ref":["Uses Google search on authority websites to return a link for a specific topic. For example, the Javascript \
@@ -693,17 +693,17 @@ api.addListener("message", function(client, message, channel, nick) {
 
 		if (~["#v8bot", "##javascript", "#regex", "#buubot", "#Node.js", "#facebook"].indexOf(channel)) {
 			if (c === "v8" && /v8\x20+.*/.exec(message)) {
-				/*var reserved = ["break", "do", "instanceof", "typeof", "case", 
+				var reserved = ["break", "do", "instanceof", "typeof", "case", 
 					"else", "new", "var", "catch", "finally", "return", 
 					"void", "continue", "for", "switch", "while", "debugger", 
 					"function", "this", "with", "default", "if", "throw", "delete", "in", "try"];
 
 				var nl = /^([A-Za-z-]+)\x20+([A-Za-z-]+)/.exec(msg);
-				if (nl && nl.every(function(x){ return !~reserved.indexOf(x) })) return false;
-
-				runCommand(c, msg, client, message, channel, nick, false);*/
-
-				irc.sendMessage(client, channel, "v8 <code> is no longer supported.  Try v8: <code> or v8> <code>");
+				if (nl) {
+					if (nl.some(function(x){ return ~reserved.indexOf(x) })) {
+						irc.sendMessage(client, channel, "v8 <code> is no longer supported.  Try v8: <code> or v8> <code>", nick);
+					}
+				}else irc.sendMessage(client, channel, "v8 <code> is no longer supported.  Try v8: <code> or v8> <code>", nick);
 			}
 			else runCommand(c, msg, client, message, channel, nick, false);
 		}
