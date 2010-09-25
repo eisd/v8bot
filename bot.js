@@ -31,7 +31,7 @@ function serialize(o) {
 			return undefined;
 		case 'object':
 			var s = "";
-			if (~o.constructor.toString().indexOf("Array")) {
+			if (Array.isArray(o)) {
 				if (!o.length) s = "[]";
 				else {
 					s = '[';
@@ -39,9 +39,12 @@ function serialize(o) {
 					s += serialize(o[i]) + ']';
 				}
 			}else {
-				s = '{';
-				for (var key in o) s += "\"" + key + "\": " + serialize(o[key]) + ', ';
-				s = s.replace(/,\s*$/, '') + '}';
+				if (o === null) s = "null";
+				else {
+					s = '{';
+					for (var key in o) s += "\"" + key + "\": " + serialize(o[key]) + ', ';
+					s = s.replace(/,\s*$/, '') + '}';
+				}
 			}
 			return s;
 		default:
@@ -420,9 +423,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					var gRegex = RegExp(r, f);
 
 					out = serialize(s.match(gRegex) || "No matches found.");
-					//while ((m = gRegex.exec(s)) != null) out.push(m[0]);
-
-					out = serialize(out);
+					/*while ((m = gRegex.exec(s)) != null) out.push(m[0]);
+					out = serialize(out);*/
 				} else {
 					var regOut = RegExp(r, f).exec(s);
 					if (regOut) out = serialize(regOut);
@@ -551,7 +553,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				}
 
 				if (c === "regex") vCommands["google"](toNick, "http://www.regular-expressions.info", c);
-				else if (c === "js" || c === "mdc") vCommands["google"](toNick, "https://developer.mozilla.org", c);
+				else if (c === "js" || c === "mdc" || c === "mdn") vCommands["google"](toNick, "https://developer.mozilla.org", c);
 				else if (c === "perl") vCommands["google"](toNick, "http://perldoc.perl.org", c);
 				else if (c === "jquery") vCommands["google"](toNick, "http://api.jquery.com", c);
 				else if (c === "php") vCommands["google"](toNick, "http://php.net", c);
