@@ -40,6 +40,7 @@ function serialize(o) {
 				}
 			}else {
 				if (o === null) s = "null";
+				else if (o instanceof Date) s = o.toString();
 				else {
 					s = '{';
 					for (var key in o) s += "\"" + key + "\": " + serialize(o[key]) + ', ';
@@ -119,22 +120,27 @@ function runCode(msg, client, nick, channel, private, format, echo) {
 
 		if (outSplit.length > 1) {
 			//Send chunked message
-			var t = setInterval(function() {
-				if (count++ < Math.min(5,outSplit.length)) {
-					if (echo) {
-						if (private) irc.sendPM(client, nick, outSplit[i]);
-						else irc.sendMessage(client, channel, outSplit[i], nick);
-					}
-				}else {
-					if (outSplit.length > 5) {
-						if (echo) {
-							if (private) irc.sendPM(client, nick, "[Output truncated...]");
-							else irc.sendMessage(client, channel, "[Output truncated...]", nick);
+			if (outSplit.every(function(x){ return !!x })) {
+				var t = setInterval(function() {
+					if (count++ < Math.min(5,outSplit.length)) {
+						if (echo && outSplit[i]) {
+							if (private) irc.sendPM(client, nick, outSplit[i]);
+							else irc.sendMessage(client, channel, outSplit[i], nick);
 						}
+					}else {
+						if (outSplit.length > 5) {
+							if (echo) {
+								if (private) irc.sendPM(client, nick, "[Output truncated...]");
+								else irc.sendMessage(client, channel, "[Output truncated...]", nick);
+							}
+						}
+						clearInterval(t);
 					}
-					clearInterval(t);
-				}
-			}, 5000), count = 0;
+				}, 5000), count = 0;
+			}else {
+				if (private) irc.sendPM(client, nick, "null");
+				else irc.sendMessage(client, channel, "null", nick);
+			}
 		}else {
 			//If no formatting, trim string quotation marks
 			if (!format) out = out.replace(/^['"]|['"]$/g, "");
@@ -544,7 +550,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			//Whitelist channels
 			if (~["#regex", "#v8bot", "##javascript"].indexOf(channel) || private) {
 				var c = p.split(" ");
-				if (c && c.length > 1) c = c[0];
+				if (c && c.length >= 1) c = c[0];
 				else {
 					if (private) irc.sendPM(client, nick, "No such command.");
 					else irc.sendMessage(client, channel, "No such command.", nick);
@@ -682,8 +688,7 @@ api.addListener("message", function(client, message, channel, nick) {
 					iniSet("beer.txt", r[1], s, function() {
 						rateLimit.beers[r[1]] = +new Date;
 						!~blacklistChannels.indexOf(channel) && irc.sendMessage(client, channel, 
-							trim_ml(nick + " has " + action + " a beer " + action2 + " " + r[1] + ". \
-							" + r[1] + " now has " + s + " beers."));
+							nick + " has " + action + " a beer " + action2 + " " + r[1] + ". " + r[1] + " now has " + s + " beers.");
 					});
 				});
 			}else {
@@ -703,9 +708,9 @@ api.addListener("message", function(client, message, channel, nick) {
 				var nl = /^([A-Za-z-]+)\x20+([A-Za-z-]+)/.exec(msg);
 				if (nl) {
 					if (nl.some(function(x){ return ~reserved.indexOf(x) })) {
-						irc.sendMessage(client, channel, "v8 <code> is no longer supported.  Try v8: <code> or v8> <code>", nick);
+						irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
 					}
-				}else irc.sendMessage(client, channel, "v8 <code> is no longer supported.  Try v8: <code> or v8> <code>", nick);
+				}else irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
 			}
 			else runCommand(c, msg, client, message, channel, nick, false);
 		}
