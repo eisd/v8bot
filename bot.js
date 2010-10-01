@@ -26,7 +26,7 @@ function serialize(o) {
 		case 'function':
 			return o.toString();
 		case 'string':
-			return "\"" + o + "\"";
+			return "\"" + o.toString() + "\"";
 		case 'undefined':
 			return undefined;
 		case 'object':
@@ -40,7 +40,8 @@ function serialize(o) {
 				}
 			}else {
 				if (o === null) s = "null";
-				else if (o instanceof Date) s = o.toString();
+				//constructor.toString() due to different context so instanceof fails
+				else if (o.constructor && ~o.constructor.toString().toLowerCase().indexOf("date")) s = "\"" + o.toString() + "\"";
 				else {
 					s = '{';
 					for (var key in o) s += "\"" + key + "\": " + serialize(o[key]) + ', ';
@@ -54,7 +55,7 @@ function serialize(o) {
 }
 
 //Trim multi-line strings with \ hack
-function trim_ml(s) { return s.replace(/^\s+/m, "") }
+function trim_ml(s) { return s.replace(/^\s+/gm, "") }
 
 /*******************************INI FUNCTIONS*******************************/
 function iniSet(file, item, value, callback) {
@@ -182,10 +183,22 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					var searchResults = JSON.parse(body);
 					var results = searchResults["responseData"]["results"];
 
-					results[0]["url"] = decodeURIComponent(results[0]["url"]);
+					if (results && results[0]) {
+						results[0]["url"] = decodeURIComponent(results[0]["url"]);
 
-					if (private) irc.sendPM(client, nick, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){ return String.fromCharCode(b) }) + " - " + results[0]["url"]);
-					else irc.sendMessage(client, channel, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){ return String.fromCharCode(b) }) + " - " + results[0]["url"], toNick);
+						if (private) {
+							irc.sendPM(client, nick, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){
+								return String.fromCharCode(b);
+							}) + " - " + results[0]["url"]);
+						}else {
+							irc.sendMessage(client, channel, results[0]["titleNoFormatting"].replace(/&#(\d+);/g, function(a, b){
+								return String.fromCharCode(b);
+							}) + " - " + results[0]["url"], toNick);
+						}
+					}else {
+						if (private) irc.sendPM(client, nick, "No search results found.");
+						else irc.sendMessage(client, channel, "No search results found.", nick);
+					}
 				});
 			});
 			request.end();
