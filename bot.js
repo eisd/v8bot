@@ -203,13 +203,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			});
 			request.end();
 		},
-		//Return first GitHub result
 		"git":function(toNick) {
 			vCommands["google"](toNick, "http://github.com", "git");
-		},
-		//Return first StackOverflow result
-		"sf":function(toNick) {
-			vCommands["google"](toNick, "http://stackoverflow.com", "sf");
 		},
 		"commands":function() {
 			var cmdOut = [];
@@ -278,14 +273,13 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				"beers":"Type nick++ to give a beer to a user (usually as a way to say \"thanks\").  Type nick-- to take a beer away from a user. \
 					Type \"`v beers <nick>\" to get the number of beers for a specific user.",
 				"git":"Searches GitHub and returns the first result. Usage: `v git <search>. Optionally: `v git <search> @ <nick>",
-				"sf":"Searches Stack Overflow and returns the first result. Usage: `v sf <search>. Optionally: `v sf <search> @ <nick>",
 				"v8":"The \"v8\" command evaluates Javascript code using Google's ultra-fast V8 Javascript Engine.  Use \"v8: code\" or \
 					\"v8> code\"",
 				"`re":"The \"`re\" command evaluates regular expressions. Usage: `re text /regex/flags",
 				"`pcre":"The \"`pcre\" command evaluates regular expressions with the PCRE library. Usage: `pcre text /regex/flags",
 				"`ref":["Uses Google search on authority websites to return a link for a specific topic. For example, the Javascript \
 					reference will provide only results from MDC.  The RegExp reference will only provide results from regular-expressions.info",
-					"Currently supported references: js, jquery, regex, perl, php, java, mdc, w3c, html, css, dom",
+					"Currently supported references: js, jquery, regex, perl, php, java, mdc, w3c, html, css, dom, wiki",
 					"Usage: `ref <language> <search>",
 					"Example: `ref js array *or* `ref regex groups"]
 			};
@@ -364,7 +358,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				var toNick = subcommand[2] ? ( (__ = /[^@]*@\s*(.*)/.exec(subcommand[2])) && __.length > 1 ? __[1] : nick ) : nick;
 
 				return vCommands[_] ? (function() { //`v command exists, execute it
-					if (~["google", "beers", "macro", "help", "regex", "git", "sf"].indexOf(_)) vCommands[_](toNick);
+					if (~["google", "beers", "macro", "help", "regex", "git"].indexOf(_)) vCommands[_](toNick);
 					else {
 						if (private) irc.sendPM(client, nick, vCommands[_]());
 						else irc.sendMessage(client, channel, vCommands[_](), toNick);
@@ -578,9 +572,10 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				else if (c === "php") vCommands["google"](toNick, "http://php.net", c);
 				else if (c === "java") vCommands["google"](toNick, "http://java.sun.com", c);
 				else if (c === "w3" || c === "w3c") vCommands["google"](toNick, "http://www.w3.org", c);
-				else if (c === "dom") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:javascript");
+				else if (c === "dom") vCommands["google"](toNick, "http://help.dottoro.com/", c);
 				else if (c === "html") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:html");
 				else if (c === "css") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:css");
+				else if (c === "wiki" || c === "wikipedia") vCommands["google"](toNick, "http://en.wikipedia.org", c);
 			}
 		},
 		"help":function() {
