@@ -279,7 +279,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				"`pcre":"The \"`pcre\" command evaluates regular expressions with the PCRE library. Usage: `pcre text /regex/flags",
 				"`ref":["Uses Google search on authority websites to return a link for a specific topic. For example, the Javascript \
 					reference will provide only results from MDC.  The RegExp reference will only provide results from regular-expressions.info",
-					"Currently supported references: js, jquery, regex, perl, php, java, mdc, w3c, html, css, dom, wiki",
+					"Currently supported references: js, jquery, regex, perl, php, java, mdc, w3c, html, css, dom, wiki, msdn",
 					"Usage: `ref <language> <search>",
 					"Example: `ref js array *or* `ref regex groups"]
 			};
@@ -555,7 +555,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			}
 
 			//Whitelist channels
-			if (~["#regex", "#v8bot", "##javascript"].indexOf(channel) || private) {
+			if (~["#regex", "#v8bot", "##javascript", "#inimino"].indexOf(channel) || private) {
 				var c = p.split(" ");
 				if (c && c.length >= 1) c = c[0];
 				else {
@@ -575,6 +575,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				else if (c === "dom") vCommands["google"](toNick, "http://help.dottoro.com/", c);
 				else if (c === "html") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:html");
 				else if (c === "css") vCommands["google"](toNick, "http://reference.sitepoint.com", c, "inurl:css");
+				else if (c === "msdn") vCommands["google"](toNick, "http://msdn.microsoft.com", c);
 				else if (c === "wiki" || c === "wikipedia") vCommands["google"](toNick, "http://en.wikipedia.org", c);
 			}
 		},
@@ -706,7 +707,7 @@ api.addListener("message", function(client, message, channel, nick) {
 			return false;
 		}
 
-		if (~["#v8bot", "##javascript", "#regex", "#buubot", "#Node.js", "#facebook"].indexOf(channel)) {
+		if (~["#v8bot", "##javascript", "#regex", "#buubot", "#Node.js", "#facebook", "#inimino"].indexOf(channel)) {
 			if (c === "v8" && /v8\x20+.*/.exec(message)) {
 				var reserved = ["break", "do", "instanceof", "typeof", "case", 
 					"else", "new", "var", "catch", "finally", "return", 
