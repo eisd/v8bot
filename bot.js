@@ -43,8 +43,14 @@ function serialize(o) {
 				//constructor.toString() due to different context so instanceof fails
 				else if (o.constructor && ~o.constructor.toString().toLowerCase().indexOf("date")) s = "\"" + o.toString() + "\"";
 				else {
+					var pType = 0;
 					s = '{';
-					for (var key in o) s += "\"" + key + "\": " + serialize(o[key]) + ', ';
+					for (var key in o) if (o.hasOwnProperty(key)) {
+						if (o.__lookupSetter__(key)) pType = 1;
+						else if (o.__lookupGetter__(key)) pType = 2;
+
+						s += "\"" + key + "\": " + (pType===1?"[Setter]":pType===2?"[Getter]":serialize(o[key])) + ', ';
+					}
 					s = s.replace(/,\s*$/, '') + '}';
 				}
 			}
@@ -653,7 +659,7 @@ api.addListener("pm", function(client, message, nick) {
 });
 
 api.addListener("message", function(client, message, channel, nick) {
-	if (/(v8bot)\s*[:>]/.exec(message)) irc.sendMessage(client, channel, "Use v8: <code> to evaluate code or \"`v commands\" for a list of v8bot commands.", nick);
+	if (/^\s*(v8bot)\s*[:>]/.exec(message)) irc.sendMessage(client, channel, "Use v8: <code> to evaluate code or \"`v commands\" for a list of v8bot commands.", nick);
 
 	//Split message
 	var c = /([^\x20:>]*)(?:[:>]?\x20*)(.*)/.exec(message), msg;
