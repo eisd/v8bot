@@ -561,7 +561,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			}
 
 			//Whitelist channels
-			if (~["#regex", "#v8bot", "##javascript", "#inimino"].indexOf(channel) || private) {
+			if (~["#regex", "#v8bot", "##javascript", "#inimino", "#Node.js"].indexOf(channel) || private) {
 				var c = p.split(" ");
 				if (c && c.length >= 1) c = c[0];
 				else {
@@ -713,19 +713,11 @@ api.addListener("message", function(client, message, channel, nick) {
 			return false;
 		}
 
-		if (~["#v8bot", "##javascript", "#regex", "#buubot", "#Node.js", "#facebook", "#inimino"].indexOf(channel)) {
-			if (c === "v8" && /v8\x20+.*/.exec(message)) {
-				var reserved = ["break", "do", "instanceof", "typeof", "case", 
-					"else", "new", "var", "catch", "finally", "return", 
-					"void", "continue", "for", "switch", "while", "debugger", 
-					"function", "this", "with", "default", "if", "throw", "delete", "in", "try"];
-
-				var nl = /^([A-Za-z-]+)\x20+([A-Za-z-]+)/.exec(msg);
-				if (nl) {
-					if (nl.some(function(x){ return ~reserved.indexOf(x) })) {
-						irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
-					}
-				}else irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
+		if (~["#v8bot", "##javascript", "#regex", "#Node.js", "#inimino"].indexOf(channel)) {
+			if (c === "v8" && /v8\x20+.*/.test(message)) {
+				if ((function (y){ var z; try{ z=Function(y) }finally{ return!!z } })(msg)) {
+					irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
+				}
 			}
 			else runCommand(c, msg, client, message, channel, nick, false);
 		}
