@@ -23,8 +23,9 @@ function serialize(o) {
 	switch (typeof o) {
 		case 'number':
 		case 'boolean':
-		case 'function':
 			return o.toString();
+		case 'function':
+			return o.toString().replace(/([\r\n])/g, function(a,b){ return b==="\n"?"\\n":"\\r"; });
 		case 'string':
 			return "\"" + o.toString() + "\"";
 		case 'undefined':
@@ -46,10 +47,10 @@ function serialize(o) {
 					var pType = 0;
 					s = '{';
 					for (var key in o) if (o.hasOwnProperty(key)) {
-						if (o.__lookupSetter__(key)) pType = 1;
-						else if (o.__lookupGetter__(key)) pType = 2;
+						if (o.__lookupSetter__(key)) pType = "[Setter]";
+						if (o.__lookupGetter__(key)) pType = pType ? "[Getter/Setter]" : "[Getter]";
 
-						s += "\"" + key + "\": " + (pType===1?"[Setter]":pType===2?"[Getter]":serialize(o[key])) + ', ';
+						s += "\"" + key + "\": " + (pType||serialize(o[key])) + ', ';
 					}
 					s = s.replace(/,\s*$/, '') + '}';
 				}
@@ -467,10 +468,10 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 		},
 		//`pcre Perl-Compatible Regular Expressions Command
 		"`pcre":function() {
-			var parseRegex = (~msg.indexOf("@") ? /(.*)\s+@\s+(\S+)$/.exec(msg) : msg), toNick = nick;
+			var parseRegex = (~msg.indexOf("@") && !/(?=.*m@[^@]+@[a-z]*)/.test(msg) ? /(.*)\s+@\s+(\S+)$/.exec(msg) : msg), toNick = nick;
 			if (parseRegex instanceof Array && parseRegex.length > 1) {
-				toNick = parseRegex[2];
-				parseRegex = parseRegex[1];
+				toNick = parseRegex.pop();
+				parseRegex = parseRegex.pop();
 			}
 
 			var mre = /^(.*)\s(?:m|(?=\/))([^\w\s\\])((?:\\.|(?!\2)[^\\])*)\2([a-z]*)\s*$/.exec(parseRegex);
@@ -537,7 +538,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				//Input regex pattern and string
 				pcretest.stdin.write('/' + mre[3] + '/' + mre[4]);
 				pcretest.stdin.write("\n");
-				pcretest.stdin.write(mre[1]);
+				pcretest.stdin.write(mre[1].replace(/\\/g, "\\\\"));
 				pcretest.stdin.write("\n");
 
 				timer = setTimeout(function() {
@@ -715,7 +716,7 @@ api.addListener("message", function(client, message, channel, nick) {
 
 		if (~["#v8bot", "##javascript", "#regex", "#Node.js", "#inimino"].indexOf(channel)) {
 			if (c === "v8" && /v8\x20+.*/.test(message)) {
-				if ((function (y){ var z; try{ z=Function(y) }finally{ return!!z } })(msg)) {
+				if ((function (y){ var z; try{ z=Function(y) }finally{ return !!z } })(msg)) {
 					irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
 				}
 			}
