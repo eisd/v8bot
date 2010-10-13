@@ -220,10 +220,10 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 			cmdOut.sort();
 
 			return trim_ml("Commands: Type `v <command>.  Optionally, type `v <command> @ <nick> to send to a specific user. \
-				`v Commands are: " + cmdOut.join(", ") + ". Other commands: v8, `re, `pcre, `ref.  Type `v help <command> for more information.");
+				`v Commands are: " + cmdOut.join(", ") + ". Other commands: v8, `re, `pcre, `ref.  Type `v help <command> for more information.  Join #v8bot for more support.");
 		},
 		"about":function() {
-			return "v8bot is an IRC bot written entirely in Javascript using Google's v8 Javascript engine and Node.js.  Credits: eisd, Tim_Smart, gf3, MizardX";
+			return "v8bot is an IRC bot written entirely in Javascript using Google's v8 Javascript engine and Node.js.  Credits: eisd, Tim_Smart, gf3, MizardX, inimino.  Join us at #v8bot !";
 		},
 		"beers":function() {
 			var p = /beers\s*(.*)/i.exec(msg);
@@ -321,8 +321,10 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				}
 			}else {
 				if (p === "") {
-					if (private) irc.sendPM(client, nick, "For a list of commands, type \"`v commands\".  For help on a specific command, type \"`v help <command>\".");
-					else irc.sendMessage(client, channel, "For a list of commands, type \"`v commands\".  For help on a specific command, type \"`v help <command>\".", toNick);
+					if (private) irc.sendPM(client, nick, "For a list of commands, type \"`v commands\".  For help on a specific command, type \"`v help <command>\". \
+						Join #v8bot for more support.");
+					else irc.sendMessage(client, channel, "For a list of commands, type \"`v commands\".  For help on a specific command, type \"`v help <command>\".\
+						Join #v8bot for more support.", toNick);
 				}else {
 					if (private) irc.sendPM(client, nick, "No manual page for this command.");
 					else irc.sendMessage(client, channel, "No manual page for this command.", toNick);
@@ -481,7 +483,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				var pcretest = require('child_process').spawn("pcretest"), out = "", timer, error = "";
 
 				//Listen for data
-				//var flag_re = false, flag_data = false;
+				var flag_re = false, flag_data = false;
 				function getData(s) {
 					s = s + "";
 
@@ -494,7 +496,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					}
 					//Input string
 					else if (~s.indexOf("data>") && !flag_data) {
-						pcretest.stdin.write(mre[1]);
+						pcretest.stdin.write(mre[1].replace(/\\/g, "\\\\"));
 						pcretest.stdin.write("\n");
 
 						flag_data = true;
@@ -503,7 +505,8 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 					else */if (!!s) {
 						out += s.replace(/re>|data>/g, "");
 
-						if (~s.toLowerCase().indexOf("failed") && !~s.indexOf("data>")) error = /failed:.*/i.exec(s).pop();
+						if (~s.toLowerCase().indexOf("failed")) error = /failed:.*offset\s*\d+/i.exec(s).pop();
+else sys.puts("---> " + s);
 
 						pcretest.stdin.end();
 					}
@@ -536,7 +539,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				/***The above lines are NOT a test. Do NOT remove the above lines.**********************/
 
 				//Input regex pattern and string
-				pcretest.stdin.write('/' + mre[3] + '/' + mre[4]);
+				pcretest.stdin.write('/' + mre[3].replace(/\//g, "\\/") + '/' + mre[4]);
 				pcretest.stdin.write("\n");
 				pcretest.stdin.write(mre[1].replace(/\\/g, "\\\\"));
 				pcretest.stdin.write("\n");
@@ -714,7 +717,7 @@ api.addListener("message", function(client, message, channel, nick) {
 			return false;
 		}
 
-		if (~["#v8bot", "##javascript", "#regex", "#Node.js", "#inimino"].indexOf(channel)) {
+		if (~["#v8bot", "##javascript", "#Node.js", "#regex", "#Node.js", "#inimino"].indexOf(channel)) {
 			if (c === "v8" && /v8\x20+.*/.test(message)) {
 				if ((function (y){ var z; try{ z=Function(y) }finally{ return !!z } })(msg)) {
 					irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
