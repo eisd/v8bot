@@ -483,7 +483,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 				var pcretest = require('child_process').spawn("pcretest"), out = "", timer, error = "";
 
 				//Listen for data
-				var flag_re = false, flag_data = false;
+				//var flag_re = false, flag_data = false;
 				function getData(s) {
 					s = s + "";
 
@@ -506,7 +506,6 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 						out += s.replace(/re>|data>/g, "");
 
 						if (~s.toLowerCase().indexOf("failed")) error = /failed:.*offset\s*\d+/i.exec(s).pop();
-else sys.puts("---> " + s);
 
 						pcretest.stdin.end();
 					}
@@ -539,7 +538,8 @@ else sys.puts("---> " + s);
 				/***The above lines are NOT a test. Do NOT remove the above lines.**********************/
 
 				//Input regex pattern and string
-				pcretest.stdin.write('/' + mre[3].replace(/\//g, "\\/") + '/' + mre[4]);
+				if (mre[2] !== "\/") mre[3] = mre[3].replace(/[^\\]\//g, "\\/");
+				pcretest.stdin.write('/' + mre[3] + '/' + mre[4]);
 				pcretest.stdin.write("\n");
 				pcretest.stdin.write(mre[1].replace(/\\/g, "\\\\"));
 				pcretest.stdin.write("\n");
