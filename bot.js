@@ -117,7 +117,7 @@ function iniGet(file, item, callback) {
 
 /*******************************EXECUTE COMMANDS*******************************/
 
-function runCode(msg, client, nick, channel, private, format, echo) {
+function runCode(msg, client, nick, toNick, channel, private, format, echo) {
 	if (echo === undefined) echo = true;
 
 	(new Sandbox()).run(msg, function(out) {
@@ -133,13 +133,13 @@ function runCode(msg, client, nick, channel, private, format, echo) {
 					if (count++ < Math.min(5,outSplit.length)) {
 						if (echo && outSplit[i]) {
 							if (private) irc.sendPM(client, nick, outSplit[i]);
-							else irc.sendMessage(client, channel, outSplit[i], nick);
+							else irc.sendMessage(client, channel, outSplit[i], toNick);
 						}
 					}else {
 						if (outSplit.length > 5) {
 							if (echo) {
 								if (private) irc.sendPM(client, nick, "[Output truncated...]");
-								else irc.sendMessage(client, channel, "[Output truncated...]", nick);
+								else irc.sendMessage(client, channel, "[Output truncated...]", toNick);
 							}
 						}
 						clearInterval(t);
@@ -147,7 +147,7 @@ function runCode(msg, client, nick, channel, private, format, echo) {
 				}, 5000), count = 0;
 			}else {
 				if (private) irc.sendPM(client, nick, "null");
-				else irc.sendMessage(client, channel, "null", nick);
+				else irc.sendMessage(client, channel, "null", toNick);
 			}
 		}else {
 			//If no formatting, trim string quotation marks
@@ -156,7 +156,7 @@ function runCode(msg, client, nick, channel, private, format, echo) {
 			//Send regular message (no chunks)
 			if (echo) {
 				if (private) irc.sendPM(client, nick, out);
-				else irc.sendMessage(client, channel, out, nick);
+				else irc.sendMessage(client, channel, out, toNick);
 			}
 		}
 	});
@@ -356,7 +356,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 
 			irc.sendMessage(client, channel, send, nick);*/
 
-			runCode(msg, client, nick, channel, private, true);
+			runCode(msg, client, nick, nick, channel, private, true);
 		},
 		//`v Commands
 		"`v":function() {
@@ -418,7 +418,7 @@ function runCommand(c, msg, client, message, channel, nick, private) {
 								else return c;
 							});
 
-							runCode(s, client, toNick, channel, private, false);
+							runCode(s, client, nick, toNick, channel, private, false);
 						}else {
 							if (private) irc.sendPM(client, nick, "No such command.");
 							else irc.sendMessage(client, channel, "No such command.", nick);
