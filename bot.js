@@ -718,7 +718,7 @@ api.addListener("message", function(client, message, channel, nick) {
 		}
 
 		if (~["#v8bot", "##javascript", "#Node.js", "#regex", "#Node.js", "#inimino"].indexOf(channel)) {
-			if (c === "v8" && /v8\x20+.*/.test(message)) {
+			if (c === "v8" && /^v8\x20+.*/.test(message)) {
 				if ((function (y){ var z; try{ z=Function(y) }finally{ return !!z } })(msg)) {
 					irc.sendMessage(client, channel, "v8 <code> is no longer supported (except in PM).  Try v8: <code> or v8> <code>", nick);
 				}
